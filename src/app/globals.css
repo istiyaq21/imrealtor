@@ -3,6 +3,20 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* I'm Realtor brand palette: deep maroon / wine, black, white, soft grey */
+  --color-maroon-50: #fbeef0;
+  --color-maroon-100: #f4d6da;
+  --color-maroon-200: #e6aeb6;
+  --color-maroon-300: #d47f8c;
+  --color-maroon-400: #b8505f;
+  --color-maroon-500: #93283a;
+  --color-maroon-600: #7a1f2f;
+  --color-maroon-700: #611829;
+  --color-maroon-800: #4a1220;
+  --color-maroon-900: #350c17;
+
+  --color-slate-25: #f9f9fa;
 }
 
 @theme inline {
@@ -10,17 +24,21 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-50: var(--color-maroon-50);
+  --color-brand-100: var(--color-maroon-100);
+  --color-brand-200: var(--color-maroon-200);
+  --color-brand-300: var(--color-maroon-300);
+  --color-brand-400: var(--color-maroon-400);
+  --color-brand-500: var(--color-maroon-500);
+  --color-brand-600: var(--color-maroon-600);
+  --color-brand-700: var(--color-maroon-700);
+  --color-brand-800: var(--color-maroon-800);
+  --color-brand-900: var(--color-maroon-900);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }

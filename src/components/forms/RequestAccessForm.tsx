@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
+import ErrorMessage from "@/components/ui/ErrorMessage";
+import { submitAccessRequestAction } from "@/app/request-access/actions";
 
 const roleOptions = [
   { label: "Agent", value: "agent" },
@@ -12,23 +14,32 @@ const roleOptions = [
   { label: "Buyer / Tenant", value: "buyer" },
 ];
 
-// TODO(supabase): submit this form to a Supabase table (e.g. `access_requests`)
-// instead of only updating local UI state, and notify admins server-side.
 export default function RequestAccessForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitted(true);
+    setError(null);
+
+    const formData = new FormData(event.currentTarget);
+
+    startTransition(async () => {
+      const result = await submitAccessRequestAction(formData);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      setSuccessMessage(result.message);
+    });
   }
 
-  if (submitted) {
+  if (successMessage) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
         <h2 className="text-lg font-semibold text-emerald-800">Request received</h2>
-        <p className="mt-2 text-sm text-emerald-700">
-          Thank you for your interest in I&apos;m Realtor. Our team will review and contact you.
-        </p>
+        <p className="mt-2 text-sm text-emerald-700">{successMessage}</p>
       </div>
     );
   }
@@ -59,12 +70,14 @@ export default function RequestAccessForm() {
         placeholder="Tell us a bit about what you're looking for"
       />
 
+      {error && <ErrorMessage message={error} />}
+
       <p className="text-xs text-slate-500">
         Private beta access is reviewed by admin. Our team will review and contact you.
       </p>
 
-      <Button type="submit" size="lg" className="w-full sm:w-auto">
-        Submit Request
+      <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isPending}>
+        {isPending ? "Submitting…" : "Submit Request"}
       </Button>
     </form>
   );

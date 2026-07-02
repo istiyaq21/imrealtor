@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import ErrorMessage from "@/components/ui/ErrorMessage";
 import { signInWithPassword } from "@/app/auth/actions";
 
 export default function LoginForm() {
@@ -53,11 +54,7 @@ export default function LoginForm() {
         required
       />
 
-      {error && (
-        <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error && <ErrorMessage message={error} />}
 
       <Button type="submit" className="mt-2 w-full" disabled={isPending}>
         {isPending ? "Signing in…" : "Sign In"}

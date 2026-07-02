@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
+import EmptyState from "@/components/ui/EmptyState";
 import PropertyCard from "@/components/property/PropertyCard";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { getPublicApprovedProperties } from "@/lib/services/properties";
@@ -46,9 +47,10 @@ export default async function BuyerOverviewPage() {
       <section>
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Saved Properties</h2>
         {savedProperties.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-            You haven&apos;t saved any properties yet.
-          </p>
+          <EmptyState
+            title="You haven't saved any properties yet."
+            description="Browse approved listings and tap Save Property to keep track of your favorites."
+          />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {savedProperties.map((property) => (

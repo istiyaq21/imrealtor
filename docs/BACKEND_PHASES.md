@@ -84,39 +84,76 @@
   image gallery via a narrow, read-only service-role lookup (documented
   in `getAssignedAgentName()` in `properties.ts`) rather than a public
   RLS policy change — see "Security notes" below.
-- **Not done in this phase:** `PropertySubmissionForm`'s image field is
-  still a placeholder (no real file input yet); `access_requests`
-  approval still only flips a status flag, it does not create the
-  matching `auth.users`/`profiles` rows (see `updateAccessRequestStatusAction`
-  TODO); `properties.area`/`type` are still free text, not normalized.
+- **Not done in this phase:** `PropertySubmissionForm`'s image field was
+  still a static placeholder (no real file input) — fixed in Phase 5.
+  `access_requests` approval still only flips a status flag, it does not
+  create the matching `auth.users`/`profiles` rows (see
+  `updateAccessRequestStatusAction` TODO, still true after Phase 5);
+  `properties.area`/`type` are still free text, not normalized.
 
-## Phase 5 — Launch Hardening
+## Phase 5 — Launch Hardening + Soft-Live Deployment Readiness ✅ (this phase)
 
-- Security review of every `TODO(security-review)` comment in `rls.sql`
-  (column-level restrictions on `profiles.role`/`status` and
-  `enquiries` agent updates currently rely on trigger + convention, not
-  column-level grants).
-- Wire `PropertySubmissionForm` to a real file input calling
-  `uploadPropertyImageAction`/`uploadPropertyImage()` — the service and
-  action already exist (see Phase 4), only the UI doesn't call them yet.
-- Decide the final signed-URL vs. public-image-proxy strategy for
-  property images (see `TODO(storage)` in `src/lib/services/storage.ts`)
-  before real traffic — signed URLs re-sign on every request today.
+- Full project audit: confirmed no client/server boundary violations, no
+  service-role leaks, no analytics/tracking/sitemap/signup routes, and
+  found + fixed one real bug — `RequestAccessForm` was 100% local-state
+  and never actually called `createAccessRequest()`, even when Supabase
+  was configured. Also fixed two spots in `services/access-requests.ts`
+  that leaked raw Supabase error text.
+- `PrivateBetaBanner` (`src/components/site/PrivateBetaBanner.tsx`) — a
+  small top-of-page banner on public routes, self-hiding on
+  dashboard/auth routes via `usePathname()` so it doesn't stack with the
+  dashboard sidebar's own private-beta note or the footer badge.
+- Admin-only System Check page at `/admin/system`
+  (`src/lib/system/checks.ts` + the page) — safe booleans and reminder
+  text only, never secret values.
+- Reusable `EmptyState`, `ErrorMessage`, `LoadingState` components
+  (`src/components/ui/`), wired into the properties page, admin's
+  standalone pending-listings/pending-access-requests panels, the buyer
+  dashboard's saved-properties section, and every form's error display
+  (replacing one-off inline markup with a shared component).
+- `PropertySubmissionForm` now has a real optional multi-file image
+  input. `services/storage.ts` gained `uploadPropertyImages()` (a
+  best-effort batch helper); both `submitOwnerPropertyAction` and
+  `submitAgentPropertyAction` upload any selected images right after the
+  property is created and report upload counts in the success message —
+  without ever failing the property submission itself if an image fails.
+- `/request-access` now actually persists via a new
+  `src/app/request-access/actions.ts` + wired `RequestAccessForm`, with a
+  documented UI note on `/admin` that approving a request does not yet
+  create the actual login — admin still does that step manually (by
+  design, not yet automated — see Phase 5.1).
+- New docs: `docs/SECURITY_REVIEW.md`, `docs/DEPLOYMENT.md`,
+  `docs/SOFT_LIVE_CHECKLIST.md`. `scripts/soft-live-check.mjs`
+  (`npm run check:soft-live`) as a lightweight automated safeguard check.
+- Re-confirmed (didn't need fixing): noindex/robots metadata, no
+  sitemap, no analytics, no signup route, RLS-enforced approval
+  workflow — all still intact from Phases 1–4.
+
+## Phase 5.1 — Suggested Next Mini-Phase
+
+Everything below was already known and documented before Phase 5 (see
+`docs/SECURITY_REVIEW.md` §11) — listed here again as the practical
+next-steps list once the private beta itself is running:
+
 - Admin-initiated invite flow (create the auth user + approved profile
-  in one step) instead of the current two-step manual process, and make
-  `access_requests` approval actually provision the account.
+  in one step), or make `access_requests` approval actually provision
+  the account, instead of the current two-step manual process.
+- Column-level `GRANT`/`REVOKE` on `profiles.role`/`status` and the
+  agent `enquiries` update, as defense in depth alongside the existing
+  trigger + RLS row-scoping (`TODO(security-review)` in `rls.sql`).
+- Decide the final signed-URL vs. public-image-proxy strategy in
+  `services/storage.ts` before real traffic (signed URLs re-sign on
+  every request today — fine at private-beta volume).
 - Swap `parseListingTextLocally()` for a real OpenAI/Claude extraction
-  call (see `TODO(ai)` in `src/lib/services/listing-imports.ts`) once
-  ready to spend on real NLP — keep the same `ParsedListingData` shape.
+  call (`TODO(ai)`) once ready to spend on real NLP.
 - Normalize `properties.area`/`type` to typed columns once real listing
-  categories are finalized (currently free text to support imports).
-- Load/perf review of RLS policies with realistic data volume, and of
-  the per-property `getAssignedAgentName()`/image-gallery lookups on the
-  detail page (fine at private-beta scale, not reviewed for a public
-  launch's traffic).
-- Decide on and enable analytics/SEO for public launch (currently
-  deliberately disabled — see `src/app/robots.ts` and root layout metadata).
-- Open (or semi-open) signup flow, replacing the admin-only
-  `access_requests` approval loop if appropriate.
+  categories are finalized.
+- Rate limiting / abuse protection on the two public write paths
+  (`/request-access`, guest enquiries).
+- Load/perf review of RLS policies and the per-property
+  `getAssignedAgentName()`/image-gallery lookups at real traffic volume.
 - Production monitoring/alerting for failed admin actions and audit log
   gaps.
+- When ready for an intentional public launch: enable analytics/SEO,
+  add a sitemap, and open (or semi-open) the signup flow — none of these
+  should happen by accident; re-read `docs/SECURITY_REVIEW.md` §12 first.

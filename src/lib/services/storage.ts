@@ -13,6 +13,7 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseConfigStatus } from "@/lib/supabase/status";
+import { addPropertyImage } from "./properties";
 import { SUPABASE_NOT_CONFIGURED_RESULT, type ServiceResult } from "./result";
 
 const BUCKET = "property-images";
@@ -52,6 +53,47 @@ export async function uploadPropertyImage(
   }
 
   return { ok: true, data: { path } };
+}
+
+export interface UploadPropertyImagesSummary {
+  uploaded: number;
+  failed: number;
+}
+
+/**
+ * Best-effort: uploads each selected file and attaches it as a
+ * property_images row. Called right after a property is created, but
+ * deliberately never fails the caller's submission — the property
+ * already exists as "pending" at that point, and a failed image is a
+ * lesser problem than losing the whole submission. Skips anything that
+ * isn't a real file (the common case when no file was chosen at all).
+ */
+export async function uploadPropertyImages(
+  files: File[],
+  propertyId: string,
+): Promise<UploadPropertyImagesSummary> {
+  let uploaded = 0;
+  let failed = 0;
+
+  for (const file of files) {
+    if (!(file instanceof File) || file.size === 0) continue;
+
+    const uploadResult = await uploadPropertyImage(file, propertyId);
+    if (!uploadResult.ok) {
+      failed += 1;
+      continue;
+    }
+
+    const imageResult = await addPropertyImage(propertyId, uploadResult.data.path);
+    if (!imageResult.ok) {
+      failed += 1;
+      continue;
+    }
+
+    uploaded += 1;
+  }
+
+  return { uploaded, failed };
 }
 
 /**

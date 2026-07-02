@@ -53,7 +53,11 @@ export default async function AdminOverviewPage() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Pending Access Requests</h2>
+        <h2 className="mb-1 text-lg font-semibold text-slate-900">Pending Access Requests</h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Approving here does not create a login on its own. Create the person&apos;s account in
+          Supabase Auth first, then insert/approve their matching profile — see docs/SUPABASE_SETUP.md.
+        </p>
         <PendingAccessRequestsTable initialRequests={pendingAccessRequests} />
       </section>
 

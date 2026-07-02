@@ -67,7 +67,7 @@ export async function createAccessRequest(
     .single();
 
   if (error || !data) {
-    return { ok: false, message: error?.message ?? "Failed to submit access request." };
+    return { ok: false, message: "Failed to submit access request. Please try again." };
   }
 
   return { ok: true, data: { id: data.id } };
@@ -127,7 +127,7 @@ export async function updateAccessRequestStatusForAdmin(
     .eq("id", id);
 
   if (error) {
-    return { ok: false, message: error.message };
+    return { ok: false, message: "Failed to update access request." };
   }
 
   return { ok: true, data: undefined };

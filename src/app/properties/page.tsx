@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PageShell from "@/components/site/PageShell";
 import PropertyFilters from "@/components/property/PropertyFilters";
 import PropertyCard from "@/components/property/PropertyCard";
+import EmptyState from "@/components/ui/EmptyState";
 import { getPublicApprovedProperties } from "@/lib/services/properties";
 
 export const metadata: Metadata = {
@@ -53,9 +54,11 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
       />
 
       {properties.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center text-slate-500">
-          No properties match your filters yet. Try adjusting your search.
-        </div>
+        <EmptyState
+          className="mt-10"
+          title="No properties match your filters yet."
+          description="Try adjusting your search or check back soon as more listings get approved."
+        />
       ) : (
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {properties.map((property) => (

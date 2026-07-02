@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireApprovedRole } from "@/lib/auth/session";
 import { addPropertyImage, createPendingProperty } from "@/lib/services/properties";
-import { uploadPropertyImage } from "@/lib/services/storage";
+import { uploadPropertyImage, uploadPropertyImages } from "@/lib/services/storage";
 import type { PropertyPurpose } from "@/lib/types";
 
 export interface ActionResult {
@@ -50,8 +50,23 @@ export async function submitOwnerPropertyAction(formData: FormData): Promise<Act
     return { ok: false, message: result.message };
   }
 
+  // TODO(storage): images are uploaded to the private property-images
+  // bucket immediately after the property row is created. If this ever
+  // needs to feel more responsive for many/large files, move this to a
+  // background job instead of blocking the submission response.
+  const imageFiles = formData.getAll("images").filter((entry): entry is File => entry instanceof File);
+  let message = "Property submitted for admin review.";
+
+  if (imageFiles.length > 0) {
+    const { uploaded, failed } = await uploadPropertyImages(imageFiles, result.data.id);
+    if (uploaded > 0) message += ` ${uploaded} image${uploaded === 1 ? "" : "s"} uploaded.`;
+    if (failed > 0) {
+      message += ` ${failed} image${failed === 1 ? "" : "s"} could not be uploaded — you can add them later.`;
+    }
+  }
+
   revalidatePath("/owner");
-  return { ok: true, message: "Property submitted for admin review." };
+  return { ok: true, message };
 }
 
 /**

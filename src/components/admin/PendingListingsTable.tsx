@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import { approvePropertyAction, rejectPropertyAction } from "@/app/admin/actions";
 import { formatPrice } from "@/lib/mock-data";
 import type { Property } from "@/lib/types";
@@ -45,9 +46,7 @@ export default function PendingListingsTable({ initialListings }: PendingListing
       {message && <p className="text-sm text-slate-500">{message}</p>}
 
       {listings.length === 0 ? (
-        <p className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-          No pending listings right now.
-        </p>
+        <EmptyState title="No pending listings right now." />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="w-full min-w-[640px] text-left text-sm">

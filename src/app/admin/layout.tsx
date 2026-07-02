@@ -8,6 +8,7 @@ const links: SidebarLink[] = [
   { href: "/admin/users", label: "Users" },
   { href: "/admin/enquiries", label: "Enquiries" },
   { href: "/admin/imports", label: "AI Imports" },
+  { href: "/admin/system", label: "System Check" },
 ];
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

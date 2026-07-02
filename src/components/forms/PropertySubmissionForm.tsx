@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useState, useTransition, type ChangeEvent, type FormEvent } from "react";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
+import ErrorMessage from "@/components/ui/ErrorMessage";
 
 const purposeOptions = [
   { label: "Sell", value: "sell" },
@@ -40,9 +41,14 @@ interface PropertySubmissionFormProps {
 }
 
 export default function PropertySubmissionForm({ action }: PropertySubmissionFormProps) {
-  const [submitted, setSubmitted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFileNames, setSelectedFileNames] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+
+  function handleImagesChange(event: ChangeEvent<HTMLInputElement>) {
+    setSelectedFileNames(Array.from(event.target.files ?? []).map((file) => file.name));
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,20 +62,17 @@ export default function PropertySubmissionForm({ action }: PropertySubmissionFor
         setError(result.message);
         return;
       }
-      setSubmitted(true);
+      setSuccessMessage(result.message);
     });
   }
 
-  if (submitted) {
+  if (successMessage) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
         <h2 className="text-lg font-semibold text-emerald-800">
           Property submitted for admin review
         </h2>
-        <p className="mt-2 text-sm text-emerald-700">
-          We&apos;ll verify the details and publish your listing once approved. Property images
-          you add later will attach to this pending listing before it goes public.
-        </p>
+        <p className="mt-2 text-sm text-emerald-700">{successMessage}</p>
       </div>
     );
   }
@@ -123,17 +126,30 @@ export default function PropertySubmissionForm({ action }: PropertySubmissionFor
       </fieldset>
 
       <div>
-        <p className="text-sm font-medium text-slate-800">Property Images</p>
-        <div className="mt-2 flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-          Image upload placeholder — images will attach to this listing once submitted
-        </div>
+        <label htmlFor="images" className="text-sm font-medium text-slate-800">
+          Property Images (optional)
+        </label>
+        {/* TODO(storage): images upload straight to the private
+            property-images bucket and are only ever served back via a
+            short-lived signed URL — see src/lib/services/storage.ts for
+            the still-open signed-URL-vs-proxy decision. */}
+        <input
+          id="images"
+          type="file"
+          name="images"
+          accept="image/*"
+          multiple
+          onChange={handleImagesChange}
+          className="mt-2 block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100"
+        />
+        <p className="mt-2 text-xs text-slate-500">
+          {selectedFileNames.length > 0
+            ? `${selectedFileNames.length} image${selectedFileNames.length === 1 ? "" : "s"} selected, ready to upload after submission: ${selectedFileNames.join(", ")}`
+            : "Optional — you can add images now or attach them later. If an image fails to upload, your property submission still goes through."}
+        </p>
       </div>
 
-      {error && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error && <ErrorMessage message={error} />}
 
       <p className="text-xs text-slate-500">
         Your submission will be reviewed by our admin team before it becomes visible to buyers.

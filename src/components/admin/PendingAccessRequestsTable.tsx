@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import { updateAccessRequestStatusAction } from "@/app/admin/actions";
 import type { AccessRequest } from "@/lib/types";
 
@@ -33,9 +34,7 @@ export default function PendingAccessRequestsTable({
       {message && <p className="text-sm text-slate-500">{message}</p>}
 
       {requests.length === 0 ? (
-        <p className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-          No pending access requests.
-        </p>
+        <EmptyState title="No pending access requests." />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="w-full min-w-[640px] text-left text-sm">

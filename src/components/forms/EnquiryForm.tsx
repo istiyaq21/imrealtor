@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
+import ErrorMessage from "@/components/ui/ErrorMessage";
 import { submitEnquiryAction } from "@/app/properties/actions";
 
 interface EnquiryFormProps {
@@ -57,11 +58,7 @@ export default function EnquiryForm({ propertyId, propertyTitle }: EnquiryFormPr
         defaultValue={`Hi, I'm interested in "${propertyTitle}". Please share more details.`}
       />
 
-      {error && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error && <ErrorMessage message={error} />}
 
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? "Sending…" : "Send Enquiry"}

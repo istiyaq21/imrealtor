@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireApprovedRole } from "@/lib/auth/session";
 import { createPendingProperty } from "@/lib/services/properties";
+import { uploadPropertyImages } from "@/lib/services/storage";
 import { updateEnquiryStatusForAgent } from "@/lib/services/enquiries";
 import type { EnquiryStatus, PropertyPurpose } from "@/lib/types";
 
@@ -57,9 +58,20 @@ export async function submitAgentPropertyAction(formData: FormData): Promise<Act
     return { ok: false, message: result.message };
   }
 
+  const imageFiles = formData.getAll("images").filter((entry): entry is File => entry instanceof File);
+  let message = "Listing submitted for admin review.";
+
+  if (imageFiles.length > 0) {
+    const { uploaded, failed } = await uploadPropertyImages(imageFiles, result.data.id);
+    if (uploaded > 0) message += ` ${uploaded} image${uploaded === 1 ? "" : "s"} uploaded.`;
+    if (failed > 0) {
+      message += ` ${failed} image${failed === 1 ? "" : "s"} could not be uploaded — you can add them later.`;
+    }
+  }
+
   revalidatePath("/agent/listings");
   revalidatePath("/agent");
-  return { ok: true, message: "Listing submitted for admin review." };
+  return { ok: true, message };
 }
 
 export async function updateAgentEnquiryStatusAction(id: string, status: EnquiryStatus): Promise<ActionResult> {

@@ -1,26 +1,22 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import PageShell from "@/components/site/PageShell";
 import Card from "@/components/ui/Card";
-import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
+import LoginForm from "@/components/auth/LoginForm";
+import { getSupabaseConfigStatus } from "@/lib/supabase/status";
 
 export const metadata: Metadata = {
   title: "Login",
 };
 
-const demoRoles = [
-  { label: "Continue as Admin", href: "/admin" },
-  { label: "Continue as Agent", href: "/agent" },
-  { label: "Continue as Owner", href: "/owner" },
-  { label: "Continue as Buyer", href: "/buyer" },
-];
-
-// TODO(supabase): replace this page with real Supabase Auth (email/password
-// or magic link) once the database is connected. The demo buttons below only
-// redirect to dashboards and do not perform any authentication.
+// No public signup here — /request-access is the only way to ask for
+// access during the private beta. See docs/SUPABASE_SETUP.md for how to
+// create the first admin/agent/owner/buyer accounts.
 export default function LoginPage() {
+  const { isPublicClientConfigured } = getSupabaseConfigStatus();
+
   return (
     <PageShell className="max-w-md">
       <div className="flex flex-col items-center text-center">
@@ -30,31 +26,18 @@ export default function LoginPage() {
       </div>
 
       <Card className="mt-8 p-6 sm:p-8">
-        <form className="flex flex-col gap-4">
-          <Input label="Email" name="email" type="email" placeholder="you@example.com" required />
-          <Input label="Password" name="password" type="password" placeholder="••••••••" required />
-          <Button type="submit" className="mt-2 w-full">
-            Sign In
-          </Button>
-        </form>
-
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs uppercase tracking-wide text-slate-400">Demo Access</span>
-          <div className="h-px flex-1 bg-slate-200" />
-        </div>
-
-        <div className="grid gap-3">
-          {demoRoles.map((role) => (
-            <Button key={role.href} href={role.href} variant="outline" className="w-full">
-              {role.label}
-            </Button>
-          ))}
-        </div>
+        {isPublicClientConfigured ? (
+          <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
+            <LoginForm />
+          </Suspense>
+        ) : (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Supabase is not configured yet. Login is unavailable in local mock mode.
+          </div>
+        )}
 
         <p className="mt-6 text-center text-xs text-slate-500">
-          Demo access for private beta testing only. No real authentication is
-          connected yet — demo buttons redirect directly to role dashboards.
+          Private beta testing only — access is limited to approved accounts.
         </p>
       </Card>
 

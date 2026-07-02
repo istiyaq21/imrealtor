@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import DashboardSidebar, { type SidebarLink } from "@/components/dashboard/DashboardSidebar";
+import { requireApprovedRole } from "@/lib/auth/session";
 
 const links: SidebarLink[] = [
   { href: "/admin", label: "Overview" },
@@ -8,7 +9,10 @@ const links: SidebarLink[] = [
   { href: "/admin/enquiries", label: "Enquiries" },
 ];
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  // Admin-only — deliberately no other role is ever allowed in here.
+  await requireApprovedRole(["admin"]);
+
   return (
     <div className="flex min-h-[calc(100vh-73px)] flex-col md:flex-row">
       <DashboardSidebar roleLabel="Admin" links={links} />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import Button from "@/components/ui/Button";
+import { getCurrentProfile, getPostLoginRedirect } from "@/lib/auth/session";
 
 const navLinks = [
   { href: "/properties", label: "Properties" },
@@ -8,7 +9,16 @@ const navLinks = [
   { href: "/request-access", label: "Request Access" },
 ];
 
-export default function Header() {
+// Async Server Component — getCurrentProfile() already returns null
+// gracefully when Supabase isn't configured, so this never crashes the
+// build. Treats "no profile row" the same as "not logged in" for display
+// purposes here; a signed-in-but-profileless user still reaches
+// /access-status by visiting it directly or via a dashboard layout.
+export default async function Header() {
+  const profile = await getCurrentProfile();
+  const isSignedIn = Boolean(profile);
+  const dashboardHref = getPostLoginRedirect(profile);
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -27,12 +37,25 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button href="/login" variant="outline" size="sm" className="hidden sm:inline-flex">
-            Login
-          </Button>
-          <Button href="/request-access" size="sm">
-            Request Access
-          </Button>
+          {isSignedIn ? (
+            <>
+              <Button href={dashboardHref} variant="outline" size="sm" className="hidden sm:inline-flex">
+                Dashboard
+              </Button>
+              <Button href="/logout" size="sm">
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button href="/login" variant="outline" size="sm" className="hidden sm:inline-flex">
+                Login
+              </Button>
+              <Button href="/request-access" size="sm">
+                Request Access
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -46,9 +69,20 @@ export default function Header() {
             {link.label}
           </Link>
         ))}
-        <Link href="/login" className="whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
-          Login
-        </Link>
+        {isSignedIn ? (
+          <>
+            <Link href={dashboardHref} className="whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
+              Dashboard
+            </Link>
+            <Link href="/logout" className="whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
+              Logout
+            </Link>
+          </>
+        ) : (
+          <Link href="/login" className="whitespace-nowrap text-sm font-medium text-slate-700 hover:text-brand-600">
+            Login
+          </Link>
+        )}
       </nav>
     </header>
   );

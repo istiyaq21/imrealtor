@@ -18,18 +18,33 @@
 - No changes to Phase 1 pages/components — the frontend still renders from
   mock data either way.
 
-## Phase 3 — Auth + Role Access
+## Phase 3 — Auth + Role Access ✅ (this phase)
 
-- Real Supabase Auth: email/password or magic link sign-in, replacing the
-  `/login` demo buttons with actual sessions.
-- Middleware to refresh the auth session cookie on every request.
-- A `handle_new_user()` trigger on `auth.users` insert to auto-create the
-  matching `profiles` row (or an admin-invite flow, since the private beta
-  has no open signup).
-- Wire `getCurrentProfile()` into dashboard layouts to redirect
-  unauthenticated/unapproved users away from role dashboards.
-- Replace demo-only redirects in `getRoleRedirectPath()` call sites with
-  real post-login redirects based on the signed-in user's actual role.
+- Real Supabase Auth: email/password sign-in (`src/app/auth/actions.ts`,
+  `src/components/auth/LoginForm.tsx`), replacing the `/login` demo
+  buttons with actual sessions. No signup page — accounts are still
+  created manually by admin (see `docs/SUPABASE_SETUP.md`).
+- `src/middleware.ts` refreshes the session cookie on every request and
+  redirects unauthenticated visitors away from `/admin`, `/agent`,
+  `/owner`, `/buyer` to `/login?next=...`.
+- `src/lib/auth/session.ts` (`getCurrentUser`, `getCurrentProfile`,
+  `requireAuth`, `requireApprovedRole`, `getPostLoginRedirect`) and
+  `src/lib/auth/guards.ts` (pure role/approval predicates +
+  `getAccessDeniedReason`) are the source of truth for role/approval
+  checks — middleware deliberately stays session-only for speed.
+- Every dashboard layout (`admin`/`agent`/`owner`/`buyer`) now calls
+  `requireApprovedRole([...])`; an approved user with the wrong role is
+  bounced to their own dashboard, not an error page. Admin does **not**
+  get an automatic override into the other three dashboards.
+- `/access-status` explains pending/rejected/suspended/missing-profile
+  states and links approved users to their dashboard.
+- `/logout` (`src/app/logout/route.ts`) signs out and redirects to
+  `/login`. Header and DashboardSidebar both link to it when signed in.
+- Everything degrades gracefully with no Supabase env vars: `/login` shows
+  a setup message instead of a form, protected routes redirect to
+  `/login` instead of crashing.
+- Still not done: password reset, and any real auto-provisioning on
+  signup (there's no signup to provision from yet).
 
 ## Phase 4 — Real Property Workflow
 
@@ -45,6 +60,12 @@
   `src/lib/services/properties.ts`.
 - Audit logging for approvals/rejections via `audit_logs`.
 - First pass at the AI WhatsApp listing importer using `listing_imports`.
+- Wire `/admin/users` approve/suspend actions to
+  `updateUserStatusForAdmin()` instead of local mock state, so admin can
+  actually change who can log in.
+- Consider an admin-initiated invite flow (admin creates the auth user +
+  approved profile in one step) instead of the two-step manual process
+  from Phase 3.
 
 ## Phase 5 — Launch Hardening
 

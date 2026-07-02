@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "@/components/site/Logo";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 
 export interface SidebarLink {
   href: string;
@@ -44,8 +45,13 @@ export default function DashboardSidebar({ roleLabel, links }: DashboardSidebarP
         })}
       </nav>
 
-      <div className="mt-auto rounded-xl bg-slate-50 p-4 text-xs text-slate-500">
-        Demo dashboard — private beta only. No real authentication is connected yet.
+      <div className="mt-auto flex flex-col gap-3">
+        <Button href="/logout" variant="outline" size="sm" className="w-full">
+          Logout
+        </Button>
+        <p className="rounded-xl bg-slate-50 p-4 text-xs text-slate-500">
+          Private beta — access is reviewed and approved by admin.
+        </p>
       </div>
     </aside>
   );

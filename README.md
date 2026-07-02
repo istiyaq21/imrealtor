@@ -14,9 +14,14 @@ in `src/lib/mock-data.ts` when Supabase env vars aren't set.
   all running on mock data.
 - **Phase 2 — Supabase Backend Foundation:** ✅ complete. Database schema,
   Row Level Security policies, storage bucket plan, and a service layer
-  that's ready to swap in for the mock data — see `docs/BACKEND_PHASES.md`
-  for what's next (Phase 3: Auth, Phase 4: real property workflow, Phase 5:
-  launch hardening).
+  that's ready to swap in for the mock data.
+- **Phase 3 — Auth + Role-Based Access:** ✅ complete. Real Supabase Auth
+  email/password login, session middleware, and per-role dashboard guards
+  (`/admin`, `/agent`, `/owner`, `/buyer`) with an `/access-status` page
+  explaining pending/rejected/suspended states. Still no signup page —
+  see `docs/SUPABASE_SETUP.md` for how accounts are created. See
+  `docs/BACKEND_PHASES.md` for what's next (Phase 4: real property
+  workflow, Phase 5: launch hardening).
 
 ## Commands
 
@@ -28,9 +33,13 @@ npm run build   # production build + type check
 
 ## Private Beta Rules
 
-- No open public signup — new users go through `/request-access` and are
-  reviewed by admin.
+- No open public signup, no signup page at all — new users go through
+  `/request-access` and are reviewed by admin, who creates their account
+  manually (see `docs/SUPABASE_SETUP.md`).
 - Agents and owners are admin-created or admin-approved.
+- `/admin`, `/agent`, `/owner`, `/buyer` are gated by real auth + role +
+  approval status (`src/middleware.ts`, `src/lib/auth/session.ts`) — an
+  approved user can only reach their own role's dashboard.
 - Listings require admin approval (`properties.status = 'approved'`)
   before they're publicly visible.
 - No ads, analytics, tracking pixels, or SEO push during the beta.

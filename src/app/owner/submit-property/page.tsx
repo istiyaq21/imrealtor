@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Card from "@/components/ui/Card";
 import PropertySubmissionForm from "@/components/forms/PropertySubmissionForm";
+import { submitOwnerPropertyAction } from "@/app/owner/actions";
 
 export const metadata: Metadata = {
   title: "Submit Property",
@@ -16,7 +17,7 @@ export default function SubmitPropertyPage() {
         </p>
       </div>
       <Card className="max-w-3xl p-6 sm:p-8">
-        <PropertySubmissionForm />
+        <PropertySubmissionForm action={submitOwnerPropertyAction} />
       </Card>
     </div>
   );

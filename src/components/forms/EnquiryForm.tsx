@@ -1,22 +1,36 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
+import { submitEnquiryAction } from "@/app/properties/actions";
 
 interface EnquiryFormProps {
+  propertyId: string;
   propertyTitle: string;
 }
 
-// TODO(supabase): insert into an `enquiries` table linked to the property
-// and assigned agent, instead of only local UI state.
-export default function EnquiryForm({ propertyTitle }: EnquiryFormProps) {
+export default function EnquiryForm({ propertyId, propertyTitle }: EnquiryFormProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitted(true);
+    setError(null);
+
+    const formData = new FormData(event.currentTarget);
+    formData.set("propertyId", propertyId);
+
+    startTransition(async () => {
+      const result = await submitEnquiryAction(formData);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      setSubmitted(true);
+    });
   }
 
   if (submitted) {
@@ -36,15 +50,21 @@ export default function EnquiryForm({ propertyTitle }: EnquiryFormProps) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Input label="Your Name" name="name" required placeholder="Full name" />
       <Input label="Phone" name="phone" type="tel" required placeholder="+91 90000 00000" />
-      <Input label="Email" name="email" type="email" required placeholder="you@example.com" />
+      <Input label="Email" name="email" type="email" placeholder="you@example.com" />
       <Textarea
         label="Message"
         name="message"
-        required
         defaultValue={`Hi, I'm interested in "${propertyTitle}". Please share more details.`}
       />
-      <Button type="submit" className="w-full">
-        Send Enquiry
+
+      {error && (
+        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      )}
+
+      <Button type="submit" className="w-full" disabled={isPending}>
+        {isPending ? "Sending…" : "Send Enquiry"}
       </Button>
     </form>
   );

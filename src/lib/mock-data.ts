@@ -361,6 +361,23 @@ export function getUserById(id: string): AppUser | undefined {
   return users.find((u) => u.id === id);
 }
 
+export function getPropertiesByOwnerId(ownerId: string): Property[] {
+  return properties.filter((p) => p.ownerId === ownerId);
+}
+
+export function getPropertiesByAssignedAgent(agentId: string): Property[] {
+  return properties.filter((p) => p.assignedAgent === agentId);
+}
+
+export function getEnquiriesForPropertyIds(propertyIds: string[]): Enquiry[] {
+  const ids = new Set(propertyIds);
+  return enquiries.filter((e) => ids.has(e.propertyId));
+}
+
+export function getEnquiriesForBuyerName(buyerName: string): Enquiry[] {
+  return enquiries.filter((e) => e.buyerName === buyerName);
+}
+
 export function formatPrice(price: number): string {
   if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)} Cr`;
   if (price >= 100000) return `₹${(price / 100000).toFixed(2)} L`;

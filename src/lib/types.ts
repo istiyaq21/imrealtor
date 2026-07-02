@@ -6,7 +6,7 @@ export type UserRole = "admin" | "agent" | "owner" | "buyer" | "support";
 
 export type ApprovalStatus = "pending" | "approved" | "rejected" | "suspended";
 
-export type ListingStatus = "draft" | "pending" | "approved" | "rejected";
+export type ListingStatus = "draft" | "pending" | "approved" | "rejected" | "archived";
 
 export type PropertyPurpose = "sell" | "rent";
 
@@ -20,6 +20,7 @@ export type PropertyType =
 
 export interface Property {
   id: string;
+  slug?: string;
   title: string;
   city: string;
   locality: string;
@@ -62,7 +63,7 @@ export interface AccessRequest {
   createdAt: string;
 }
 
-export type EnquiryStatus = "new" | "contacted" | "closed";
+export type EnquiryStatus = "new" | "contacted" | "closed" | "spam";
 
 export interface Enquiry {
   id: string;

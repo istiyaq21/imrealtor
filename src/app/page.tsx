@@ -3,7 +3,7 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import PropertyCard from "@/components/property/PropertyCard";
-import { getFeaturedProperties } from "@/lib/mock-data";
+import { getFeaturedPublicProperties } from "@/lib/services/properties";
 
 const howItWorks = [
   {
@@ -43,8 +43,8 @@ const trustPoints = [
   },
 ];
 
-export default function Home() {
-  const featuredProperties = getFeaturedProperties();
+export default async function Home() {
+  const featuredProperties = await getFeaturedPublicProperties();
 
   return (
     <div>

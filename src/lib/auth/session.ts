@@ -51,10 +51,7 @@ export async function getCurrentProfile(): Promise<AppUser | null> {
  * approved, otherwise the access-status page explaining why not.
  */
 export function getPostLoginRedirect(profile: AppUser | null): string {
-  if (!profile || profile.status !== "approved") {
-    return "/access-status";
-  }
-  return getRoleRedirectPath(profile.role);
+  return getRoleRedirectPath(profile);
 }
 
 /**

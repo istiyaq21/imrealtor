@@ -3,21 +3,22 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
-import { enquiries, formatPrice, getUserById, properties } from "@/lib/mock-data";
+import { getCurrentProfile } from "@/lib/auth/session";
+import { listPropertiesForAgent } from "@/lib/services/properties";
+import { listEnquiriesForAgent } from "@/lib/services/enquiries";
+import { formatPrice } from "@/lib/mock-data";
 import type { ListingStatus } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Agent Overview",
 };
 
-// Demo agent for the private beta (no real auth session yet).
-const CURRENT_AGENT_ID = "u2";
-
 const statusTone: Record<ListingStatus, "neutral" | "warning" | "success" | "danger"> = {
   draft: "neutral",
   pending: "warning",
   approved: "success",
   rejected: "danger",
+  archived: "neutral",
 };
 
 const followUps = [
@@ -25,18 +26,26 @@ const followUps = [
   { name: "Amit Trivedi", property: "Green Valley Independent Villa", due: "Tomorrow" },
 ];
 
-export default function AgentOverviewPage() {
-  const agent = getUserById(CURRENT_AGENT_ID);
-  const assignedListings = properties.filter((p) => p.assignedAgent === CURRENT_AGENT_ID);
-  const propertyIds = new Set(assignedListings.map((p) => p.id));
-  const relatedEnquiries = enquiries.filter((e) => propertyIds.has(e.propertyId));
+// The agent layout already calls requireApprovedRole(["agent"]) before
+// this page renders, so getCurrentProfile() is guaranteed to return an
+// approved agent profile in real mode; mock mode falls back to a fixed
+// demo agent id since there's no real session to read.
+export default async function AgentOverviewPage() {
+  const profile = await getCurrentProfile();
+  const agentId = profile?.id ?? "u2";
+
+  const [assignedListings, relatedEnquiries] = await Promise.all([
+    listPropertiesForAgent(agentId),
+    listEnquiriesForAgent(agentId),
+  ]);
+
   const profileCompletion = 80;
 
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Welcome, {agent?.name ?? "Agent"}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Welcome, {profile?.name ?? "Agent"}</h1>
           <p className="mt-1 text-sm text-slate-600">
             Here&apos;s an overview of your assigned listings and enquiries.
           </p>
@@ -67,9 +76,13 @@ export default function AgentOverviewPage() {
               {assignedListings.map((property) => (
                 <tr key={property.id} className="border-b border-slate-100 last:border-0">
                   <td className="px-4 py-3 font-medium text-slate-900">
-                    <Link href={`/properties/${property.id}`} className="hover:text-brand-600">
-                      {property.title}
-                    </Link>
+                    {property.status === "approved" ? (
+                      <Link href={`/properties/${property.id}`} className="hover:text-brand-600">
+                        {property.title}
+                      </Link>
+                    ) : (
+                      property.title
+                    )}
                   </td>
                   <td className="px-4 py-3 text-slate-600">{property.city}</td>
                   <td className="px-4 py-3 text-slate-600">{formatPrice(property.price)}</td>

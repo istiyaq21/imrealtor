@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import AgentListingsPanel from "@/components/agent/AgentListingsPanel";
-import { properties } from "@/lib/mock-data";
+import { getCurrentProfile } from "@/lib/auth/session";
+import { listPropertiesForAgent } from "@/lib/services/properties";
 
 export const metadata: Metadata = {
   title: "My Listings",
 };
 
-const CURRENT_AGENT_ID = "u2";
-
-export default function AgentListingsPage() {
-  const listings = properties.filter((p) => p.assignedAgent === CURRENT_AGENT_ID);
+export default async function AgentListingsPage() {
+  const profile = await getCurrentProfile();
+  const agentId = profile?.id ?? "u2";
+  const listings = await listPropertiesForAgent(agentId);
 
   return (
     <div className="flex flex-col gap-6">

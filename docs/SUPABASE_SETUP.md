@@ -97,7 +97,7 @@ Before connecting a real Supabase project, double-check these are still true:
 ## 8. Auth setup (Phase 3)
 
 Real Supabase Auth is wired in: `/login` signs in with email/password
-against `auth.users`, `src/middleware.ts` refreshes the session and gates
+against `auth.users`, `src/proxy.ts` refreshes the session and gates
 `/admin`, `/agent`, `/owner`, `/buyer`, and layouts check the signed-in
 user's `profiles.role`/`status` before rendering.
 
@@ -140,6 +140,42 @@ created the same way as the first admin user in step 4 above:
   phase, pair it with a `handle_new_user()` trigger (see
   `docs/BACKEND_PHASES.md`, Phase 4/5) rather than relying on manual inserts.
 
+## 9. Phase 4 manual testing checklist
+
+With the four demo accounts from step 8 (admin/agent/owner/buyer, all
+`approved`):
+
+- [ ] **Submit owner property** — sign in as owner, go to
+      `/owner/submit-property`, submit the form. Should show "submitted
+      for admin review" and appear in `/owner` with status `pending`.
+- [ ] **Admin approves listing** — sign in as admin, go to
+      `/admin/listings`, click Approve on the pending listing. Should
+      show "Listing approved" and the row's badge flips to `approved`.
+- [ ] **Public listing appears** — visit `/properties` (signed out or as
+      any role) — the newly approved listing should now show up, and its
+      `/properties/[id]` page should render.
+- [ ] **Buyer sends enquiry** — from that property's detail page, submit
+      the enquiry form (works signed out too — guest enquiries are
+      allowed against approved properties only). Should show a success
+      message.
+- [ ] **Admin marks contacted** — sign in as admin, go to
+      `/admin/enquiries`, click "Mark Contacted" on that enquiry.
+- [ ] **Buyer saves property** — sign in as buyer, visit an approved
+      property's detail page, click "Save Property". Should appear under
+      "Saved Properties" on `/buyer`.
+- [ ] **AI import creates pending listing** — sign in as admin, go to
+      `/admin/imports`, paste something like `"3BHK apartment for sale in
+      Andheri, Mumbai. 1450 sqft. ₹2.15 Cr. Gym, parking. Call
+      9876543210."`, click Parse Listing, review/edit the extracted
+      fields, click "Save as Pending Property". Should appear in
+      `/admin/listings` with status `pending`.
+- [ ] **Storage bucket** — no UI currently uploads a real file
+      (`PropertySubmissionForm`'s image field is still a placeholder —
+      see `docs/BACKEND_PHASES.md`, Phase 5). To sanity-check the bucket
+      itself: Dashboard > Storage > property-images > try uploading a
+      test file manually, confirm it's *not* publicly downloadable via
+      its raw URL (private bucket — see `src/lib/db/storage.sql`).
+
 ## How the app behaves without Supabase configured
 
 - `getSupabaseConfigStatus()` (`src/lib/supabase/status.ts`) reports which
@@ -151,12 +187,11 @@ created the same way as the first admin user in step 4 above:
   `src/lib/mock-data.ts` for reads, and return
   `{ ok: false, message: "Supabase is not configured yet." }` for
   mutations.
-- The frontend (Phase 1) still imports mock data directly for dashboard
-  *content* (listings, enquiries, users tables) — the service layer exists
-  so Phase 4 can swap those imports for real Supabase calls without
-  touching component code.
-- Auth (Phase 3) is the exception: `/login`, `/logout`, `/access-status`,
-  and every dashboard layout are wired to real Supabase Auth already. With
-  no env vars set, `/login` shows a setup message instead of a form, and
-  `/admin`, `/agent`, `/owner`, `/buyer` all redirect to `/login` instead
-  of rendering — see `src/middleware.ts` and `src/lib/auth/session.ts`.
+- As of Phase 4, every dashboard page reads through the service layer
+  above, which is what actually falls back to mock data — the pages
+  themselves no longer import `src/lib/mock-data.ts` directly.
+- Auth: `/login`, `/logout`, `/access-status`, and every dashboard layout
+  are wired to real Supabase Auth. With no env vars set, `/login` shows a
+  setup message instead of a form, and `/admin`, `/agent`, `/owner`,
+  `/buyer` all redirect to `/login` instead of rendering — see
+  `src/proxy.ts` and `src/lib/auth/session.ts`.

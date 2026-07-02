@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import PropertySubmissionForm from "@/components/forms/PropertySubmissionForm";
+import { submitAgentPropertyAction } from "@/app/agent/actions";
 import { formatPrice } from "@/lib/mock-data";
 import type { ListingStatus, Property } from "@/lib/types";
 
@@ -14,10 +16,21 @@ const statusTone: Record<ListingStatus, "neutral" | "warning" | "success" | "dan
   pending: "warning",
   approved: "success",
   rejected: "danger",
+  archived: "neutral",
 };
 
 export default function AgentListingsPanel({ listings }: { listings: Property[] }) {
   const [showForm, setShowForm] = useState(false);
+  const router = useRouter();
+
+  async function handleSubmit(formData: FormData) {
+    const result = await submitAgentPropertyAction(formData);
+    if (result.ok) {
+      setShowForm(false);
+      router.refresh();
+    }
+    return result;
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -33,7 +46,7 @@ export default function AgentListingsPanel({ listings }: { listings: Property[] 
       {showForm && (
         <Card className="p-6">
           <h2 className="mb-4 text-base font-semibold text-slate-900">New Listing (Requires Admin Approval)</h2>
-          <PropertySubmissionForm />
+          <PropertySubmissionForm action={handleSubmit} />
         </Card>
       )}
 
@@ -51,9 +64,13 @@ export default function AgentListingsPanel({ listings }: { listings: Property[] 
             {listings.map((property) => (
               <tr key={property.id} className="border-b border-slate-100 last:border-0">
                 <td className="px-4 py-3 font-medium text-slate-900">
-                  <Link href={`/properties/${property.id}`} className="hover:text-brand-600">
-                    {property.title}
-                  </Link>
+                  {property.status === "approved" ? (
+                    <Link href={`/properties/${property.id}`} className="hover:text-brand-600">
+                      {property.title}
+                    </Link>
+                  ) : (
+                    property.title
+                  )}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{property.city}</td>
                 <td className="px-4 py-3 text-slate-600">{formatPrice(property.price)}</td>

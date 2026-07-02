@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import ListingsTable from "@/components/admin/ListingsTable";
-import { properties } from "@/lib/mock-data";
+import { listPropertiesForAdmin } from "@/lib/services/properties";
 
 export const metadata: Metadata = {
   title: "Manage Listings",
 };
 
-export default function AdminListingsPage() {
+export default async function AdminListingsPage() {
+  const listings = await listPropertiesForAdmin();
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -15,7 +17,7 @@ export default function AdminListingsPage() {
           Review, approve, reject, or feature property listings.
         </p>
       </div>
-      <ListingsTable initialListings={properties} />
+      <ListingsTable initialListings={listings} />
     </div>
   );
 }

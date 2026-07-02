@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
+import { approvePropertyAction, featurePropertyAction, rejectPropertyAction } from "@/app/admin/actions";
 import { formatPrice } from "@/lib/mock-data";
 import type { ListingStatus, Property } from "@/lib/types";
 
@@ -13,6 +14,7 @@ const statusTone: Record<ListingStatus, "neutral" | "warning" | "success" | "dan
   pending: "warning",
   approved: "success",
   rejected: "danger",
+  archived: "neutral",
 };
 
 const statusOptions = [
@@ -20,14 +22,15 @@ const statusOptions = [
   { label: "Pending", value: "pending" },
   { label: "Approved", value: "approved" },
   { label: "Rejected", value: "rejected" },
+  { label: "Archived", value: "archived" },
 ];
 
-// TODO(supabase): persist approve/reject/feature actions to the
-// `properties` table instead of local component state.
 export default function ListingsTable({ initialListings }: { initialListings: Property[] }) {
   const [listings, setListings] = useState(initialListings);
   const [statusFilter, setStatusFilter] = useState("");
   const [cityFilter, setCityFilter] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const cityOptions = useMemo(
     () =>
@@ -44,14 +47,38 @@ export default function ListingsTable({ initialListings }: { initialListings: Pr
     return true;
   });
 
-  function setStatus(id: string, status: ListingStatus) {
-    setListings((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
+  function approve(id: string) {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await approvePropertyAction(id);
+      if (result.ok) {
+        setListings((prev) => prev.map((item) => (item.id === id ? { ...item, status: "approved" } : item)));
+      }
+      setMessage(result.message);
+    });
   }
 
-  function toggleFeatured(id: string) {
-    setListings((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, featured: !item.featured } : item)),
-    );
+  function reject(id: string) {
+    const reason = window.prompt("Reason for rejection (optional):") ?? "";
+    setMessage(null);
+    startTransition(async () => {
+      const result = await rejectPropertyAction(id, reason);
+      if (result.ok) {
+        setListings((prev) => prev.map((item) => (item.id === id ? { ...item, status: "rejected" } : item)));
+      }
+      setMessage(result.message);
+    });
+  }
+
+  function toggleFeatured(id: string, nextFeatured: boolean) {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await featurePropertyAction(id, nextFeatured);
+      if (result.ok) {
+        setListings((prev) => prev.map((item) => (item.id === id ? { ...item, featured: nextFeatured } : item)));
+      }
+      setMessage(result.message);
+    });
   }
 
   return (
@@ -76,6 +103,8 @@ export default function ListingsTable({ initialListings }: { initialListings: Pr
           />
         </div>
       </div>
+
+      {message && <p className="text-sm text-slate-500">{message}</p>}
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="w-full min-w-[820px] text-left text-sm">
@@ -109,13 +138,18 @@ export default function ListingsTable({ initialListings }: { initialListings: Pr
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setStatus(property.id, "approved")}>
+                    <Button size="sm" variant="outline" disabled={isPending} onClick={() => approve(property.id)}>
                       Approve
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setStatus(property.id, "rejected")}>
+                    <Button size="sm" variant="outline" disabled={isPending} onClick={() => reject(property.id)}>
                       Reject
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => toggleFeatured(property.id)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isPending}
+                      onClick={() => toggleFeatured(property.id, !property.featured)}
+                    >
                       {property.featured ? "Unfeature" : "Feature"}
                     </Button>
                   </div>

@@ -6,7 +6,13 @@ import PageShell from "@/components/site/PageShell";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import EnquiryForm from "@/components/forms/EnquiryForm";
-import { formatPrice, getPropertyById, getUserById } from "@/lib/mock-data";
+import SavePropertyButton from "@/components/property/SavePropertyButton";
+import { formatPrice } from "@/lib/mock-data";
+import { getPublicPropertyById } from "@/lib/services/properties";
+import { listPropertyImages } from "@/lib/services/properties";
+import { getPropertyImagePublicOrSignedUrl } from "@/lib/services/storage";
+import { getCurrentProfile } from "@/lib/auth/session";
+import { isPropertySavedForBuyer } from "@/lib/services/saved-properties";
 
 interface PropertyDetailPageProps {
   params: Promise<{ id: string }>;
@@ -14,19 +20,27 @@ interface PropertyDetailPageProps {
 
 export async function generateMetadata({ params }: PropertyDetailPageProps): Promise<Metadata> {
   const { id } = await params;
-  const property = getPropertyById(id);
-  return { title: property ? property.title : "Property" };
+  const detail = await getPublicPropertyById(id);
+  return { title: detail ? detail.property.title : "Property" };
 }
 
 export default async function PropertyDetailPage({ params }: PropertyDetailPageProps) {
   const { id } = await params;
-  const property = getPropertyById(id);
+  const detail = await getPublicPropertyById(id);
 
-  if (!property || property.status !== "approved") {
+  if (!detail) {
     notFound();
   }
 
-  const agent = property.assignedAgent ? getUserById(property.assignedAgent) : undefined;
+  const { property, assignedAgentName } = detail;
+
+  const [images, profile] = await Promise.all([listPropertyImages(property.id), getCurrentProfile()]);
+  const galleryUrls = (
+    await Promise.all(images.map((image) => getPropertyImagePublicOrSignedUrl(image.storage_path)))
+  ).filter((url): url is string => Boolean(url));
+
+  const isApprovedBuyer = profile?.role === "buyer" && profile.status === "approved";
+  const alreadySaved = isApprovedBuyer ? await isPropertySavedForBuyer(profile.id, property.id) : false;
 
   return (
     <PageShell>
@@ -38,11 +52,24 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
         <div className="lg:col-span-2">
           <div className="grid gap-3 sm:grid-cols-4">
             <div className="col-span-4 flex h-72 items-center justify-center rounded-2xl bg-slate-100 sm:h-96">
-              <Image src={property.image} alt={property.title} width={80} height={80} className="opacity-40" />
+              {galleryUrls[0] ? (
+                // Signed URLs come from a per-deployment Supabase domain we
+                // don't know at build time, so next/image (which requires a
+                // configured remote host) isn't a good fit here.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={galleryUrls[0]} alt={property.title} className="h-full w-full rounded-2xl object-cover" />
+              ) : (
+                <Image src={property.image} alt={property.title} width={80} height={80} className="opacity-40" />
+              )}
             </div>
-            {[1, 2, 3, 4].map((n) => (
-              <div key={n} className="flex h-20 items-center justify-center rounded-xl bg-slate-100">
-                <Image src={property.image} alt="" width={28} height={28} className="opacity-30" />
+            {(galleryUrls.length > 0 ? galleryUrls.slice(1, 5) : [1, 2, 3, 4]).map((src, index) => (
+              <div key={typeof src === "string" ? src : index} className="flex h-20 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                {typeof src === "string" ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={src} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <Image src={property.image} alt="" width={28} height={28} className="opacity-30" />
+                )}
               </div>
             ))}
           </div>
@@ -100,18 +127,18 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
         <div className="flex flex-col gap-6">
           <Card className="p-5">
             <h2 className="text-base font-semibold text-slate-900">Listed By</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              {agent ? agent.name : "Agent to be assigned"}
-            </p>
+            <p className="mt-2 text-sm text-slate-600">{assignedAgentName ?? "Agent to be assigned"}</p>
             <p className="text-xs text-slate-500">
-              {agent ? "Verified I'm Realtor Agent" : "Contact via enquiry form"}
+              {assignedAgentName ? "Verified I'm Realtor Agent" : "Contact via enquiry form"}
             </p>
           </Card>
+
+          {isApprovedBuyer && <SavePropertyButton propertyId={property.id} initialSaved={alreadySaved} />}
 
           <Card className="p-5">
             <h2 className="text-base font-semibold text-slate-900">Enquire About This Property</h2>
             <div className="mt-4">
-              <EnquiryForm propertyTitle={property.title} />
+              <EnquiryForm propertyId={property.id} propertyTitle={property.title} />
             </div>
           </Card>
         </div>

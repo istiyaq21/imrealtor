@@ -1,11 +1,12 @@
 import Badge from "@/components/ui/Badge";
-import type { Enquiry } from "@/lib/types";
+import type { Enquiry, EnquiryStatus } from "@/lib/types";
 
-const statusTone = {
+const statusTone: Record<EnquiryStatus, "brand" | "warning" | "success" | "danger"> = {
   new: "brand",
   contacted: "warning",
   closed: "success",
-} as const;
+  spam: "danger",
+};
 
 export default function RecentEnquiriesTable({ enquiries }: { enquiries: Enquiry[] }) {
   return (

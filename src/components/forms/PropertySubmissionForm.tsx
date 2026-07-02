@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
@@ -30,14 +30,34 @@ const amenitiesList = [
   "Private Garden",
 ];
 
-// TODO(supabase): insert into a `properties` table with status "pending"
-// and trigger an admin notification, instead of only local UI state.
-export default function PropertySubmissionForm() {
+export interface PropertySubmissionResult {
+  ok: boolean;
+  message: string;
+}
+
+interface PropertySubmissionFormProps {
+  action: (formData: FormData) => Promise<PropertySubmissionResult>;
+}
+
+export default function PropertySubmissionForm({ action }: PropertySubmissionFormProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitted(true);
+    setError(null);
+
+    const formData = new FormData(event.currentTarget);
+
+    startTransition(async () => {
+      const result = await action(formData);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      setSubmitted(true);
+    });
   }
 
   if (submitted) {
@@ -47,7 +67,8 @@ export default function PropertySubmissionForm() {
           Property submitted for admin review
         </h2>
         <p className="mt-2 text-sm text-emerald-700">
-          We&apos;ll verify the details and publish your listing once approved.
+          We&apos;ll verify the details and publish your listing once approved. Property images
+          you add later will attach to this pending listing before it goes public.
         </p>
       </div>
     );
@@ -104,16 +125,22 @@ export default function PropertySubmissionForm() {
       <div>
         <p className="text-sm font-medium text-slate-800">Property Images</p>
         <div className="mt-2 flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
-          Image upload placeholder — coming soon
+          Image upload placeholder — images will attach to this listing once submitted
         </div>
       </div>
+
+      {error && (
+        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      )}
 
       <p className="text-xs text-slate-500">
         Your submission will be reviewed by our admin team before it becomes visible to buyers.
       </p>
 
-      <Button type="submit" size="lg" className="w-full sm:w-auto">
-        Submit for Review
+      <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isPending}>
+        {isPending ? "Submitting…" : "Submit for Review"}
       </Button>
     </form>
   );

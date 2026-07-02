@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import UsersTable from "@/components/admin/UsersTable";
-import { users } from "@/lib/mock-data";
+import { listUsersForAdmin } from "@/lib/services/profiles";
 
 export const metadata: Metadata = {
   title: "Manage Users",
 };
 
-export default function AdminUsersPage() {
+export default async function AdminUsersPage() {
+  const users = await listUsersForAdmin();
+
   return (
     <div className="flex flex-col gap-6">
       <div>

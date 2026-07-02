@@ -3,26 +3,33 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import PropertyCard from "@/components/property/PropertyCard";
-import { enquiries, getApprovedProperties, getUserById } from "@/lib/mock-data";
+import { getCurrentProfile } from "@/lib/auth/session";
+import { getPublicApprovedProperties } from "@/lib/services/properties";
+import { listEnquiriesForBuyer } from "@/lib/services/enquiries";
+import { listSavedPropertiesForBuyer } from "@/lib/services/saved-properties";
 
 export const metadata: Metadata = {
   title: "Buyer Overview",
 };
 
-const CURRENT_BUYER_ID = "u6";
+export default async function BuyerOverviewPage() {
+  const profile = await getCurrentProfile();
+  const buyerId = profile?.id ?? "u6";
 
-export default function BuyerOverviewPage() {
-  const buyer = getUserById(CURRENT_BUYER_ID);
-  const approvedProperties = getApprovedProperties();
-  const savedProperties = approvedProperties.slice(0, 2);
-  const recommended = approvedProperties.slice(2, 5);
-  const myEnquiries = enquiries.filter((e) => e.buyerName === buyer?.name);
+  const [savedProperties, myEnquiries, approvedProperties] = await Promise.all([
+    listSavedPropertiesForBuyer(buyerId),
+    listEnquiriesForBuyer(buyerId),
+    getPublicApprovedProperties(),
+  ]);
+
+  const savedIds = new Set(savedProperties.map((p) => p.id));
+  const recommended = approvedProperties.filter((p) => !savedIds.has(p.id)).slice(0, 3);
 
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Welcome, {buyer?.name ?? "Buyer"}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Welcome, {profile?.name ?? "Buyer"}</h1>
           <p className="mt-1 text-sm text-slate-600">
             Explore recommended properties and track your enquiries.
           </p>

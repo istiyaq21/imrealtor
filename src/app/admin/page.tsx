@@ -4,13 +4,23 @@ import PendingListingsTable from "@/components/admin/PendingListingsTable";
 import PendingAccessRequestsTable from "@/components/admin/PendingAccessRequestsTable";
 import RecentEnquiriesTable from "@/components/admin/RecentEnquiriesTable";
 import Button from "@/components/ui/Button";
-import { accessRequests, dashboardStats, enquiries, properties } from "@/lib/mock-data";
+import { getAdminDashboardStats } from "@/lib/services/dashboard";
+import { listPropertiesForAdmin } from "@/lib/services/properties";
+import { listPendingAccessRequestsForAdmin } from "@/lib/services/access-requests";
+import { listEnquiriesForAdmin } from "@/lib/services/enquiries";
 
 export const metadata: Metadata = {
   title: "Admin Overview",
 };
 
-export default function AdminOverviewPage() {
+export default async function AdminOverviewPage() {
+  const [stats, pendingListings, pendingAccessRequests, enquiries] = await Promise.all([
+    getAdminDashboardStats(),
+    listPropertiesForAdmin({ status: "pending" }),
+    listPendingAccessRequestsForAdmin(),
+    listEnquiriesForAdmin(),
+  ]);
+
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -31,25 +41,25 @@ export default function AdminOverviewPage() {
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <DashboardCard label="Total Listings" value={dashboardStats.totalListings} />
-        <DashboardCard label="Pending Listings" value={dashboardStats.pendingListings} hint="Awaiting review" />
-        <DashboardCard label="Approved Agents" value={dashboardStats.approvedAgents} />
-        <DashboardCard label="New Enquiries" value={dashboardStats.newEnquiries} hint="Not yet contacted" />
+        <DashboardCard label="Total Listings" value={stats.totalListings} />
+        <DashboardCard label="Pending Listings" value={stats.pendingListings} hint="Awaiting review" />
+        <DashboardCard label="Approved Agents" value={stats.approvedAgents} />
+        <DashboardCard label="New Enquiries" value={stats.newEnquiries} hint="Not yet contacted" />
       </div>
 
       <section>
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Pending Listing Approvals</h2>
-        <PendingListingsTable initialListings={properties} />
+        <PendingListingsTable initialListings={pendingListings} />
       </section>
 
       <section>
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Pending Access Requests</h2>
-        <PendingAccessRequestsTable initialRequests={accessRequests} />
+        <PendingAccessRequestsTable initialRequests={pendingAccessRequests} />
       </section>
 
       <section>
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Recent Enquiries</h2>
-        <RecentEnquiriesTable enquiries={enquiries} />
+        <RecentEnquiriesTable enquiries={enquiries.slice(0, 10)} />
       </section>
     </div>
   );

@@ -19,9 +19,15 @@ in `src/lib/mock-data.ts` when Supabase env vars aren't set.
   email/password login, session middleware, and per-role dashboard guards
   (`/admin`, `/agent`, `/owner`, `/buyer`) with an `/access-status` page
   explaining pending/rejected/suspended states. Still no signup page —
-  see `docs/SUPABASE_SETUP.md` for how accounts are created. See
-  `docs/BACKEND_PHASES.md` for what's next (Phase 4: real property
-  workflow, Phase 5: launch hardening).
+  see `docs/SUPABASE_SETUP.md` for how accounts are created.
+- **Phase 4 — Real Property Workflow:** ✅ complete. Every dashboard now
+  reads/writes through the service layer with Supabase (owner submissions,
+  agent listings, admin approve/reject/feature/user-management/enquiries,
+  buyer saved properties, audit logging), an AI WhatsApp listing importer
+  foundation at `/admin/imports` (local parser only, no external AI calls
+  yet), and a storage foundation for property images. Falls back to mock
+  data automatically when Supabase isn't configured. See
+  `docs/BACKEND_PHASES.md` for what's next (Phase 5: launch hardening).
 
 ## Commands
 

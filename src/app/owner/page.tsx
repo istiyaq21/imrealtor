@@ -3,27 +3,37 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
-import { enquiries, formatPrice, getUserById, properties } from "@/lib/mock-data";
+import { getCurrentProfile } from "@/lib/auth/session";
+import { listPropertiesForOwner } from "@/lib/services/properties";
+import { listEnquiriesForOwner } from "@/lib/services/enquiries";
+import { formatPrice } from "@/lib/mock-data";
 import type { ListingStatus } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Owner Overview",
 };
 
-const CURRENT_OWNER_ID = "u3";
-
 const statusTone: Record<ListingStatus, "neutral" | "warning" | "success" | "danger"> = {
   draft: "neutral",
   pending: "warning",
   approved: "success",
   rejected: "danger",
+  archived: "neutral",
 };
 
-export default function OwnerOverviewPage() {
-  const owner = getUserById(CURRENT_OWNER_ID);
-  const submittedProperties = properties.filter((p) => p.ownerId === CURRENT_OWNER_ID);
-  const propertyIds = new Set(submittedProperties.map((p) => p.id));
-  const relatedEnquiries = enquiries.filter((e) => propertyIds.has(e.propertyId));
+// The admin/agent/owner/buyer layouts already call requireApprovedRole()
+// before this page renders, so getCurrentProfile() here is guaranteed to
+// return an approved owner profile (or, in mock mode, null — handled
+// below with a safe fallback rather than assuming non-null).
+export default async function OwnerOverviewPage() {
+  const profile = await getCurrentProfile();
+  const ownerId = profile?.id ?? "u3"; // mock-mode fallback owner id
+
+  const [submittedProperties, relatedEnquiries] = await Promise.all([
+    listPropertiesForOwner(ownerId),
+    listEnquiriesForOwner(ownerId),
+  ]);
+
   const approvedCount = submittedProperties.filter((p) => p.status === "approved").length;
   const pendingCount = submittedProperties.filter((p) => p.status === "pending").length;
 
@@ -31,7 +41,7 @@ export default function OwnerOverviewPage() {
     <div className="flex flex-col gap-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Welcome, {owner?.name ?? "Owner"}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Welcome, {profile?.name ?? "Owner"}</h1>
           <p className="mt-1 text-sm text-slate-600">
             Track the review status of your submitted properties.
           </p>
@@ -62,9 +72,13 @@ export default function OwnerOverviewPage() {
               {submittedProperties.map((property) => (
                 <tr key={property.id} className="border-b border-slate-100 last:border-0">
                   <td className="px-4 py-3 font-medium text-slate-900">
-                    <Link href={`/properties/${property.id}`} className="hover:text-brand-600">
-                      {property.title}
-                    </Link>
+                    {property.status === "approved" ? (
+                      <Link href={`/properties/${property.id}`} className="hover:text-brand-600">
+                        {property.title}
+                      </Link>
+                    ) : (
+                      property.title
+                    )}
                   </td>
                   <td className="px-4 py-3 text-slate-600">{property.city}</td>
                   <td className="px-4 py-3 text-slate-600">{formatPrice(property.price)}</td>

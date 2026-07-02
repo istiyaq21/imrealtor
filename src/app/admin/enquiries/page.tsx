@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import EnquiriesTable from "@/components/admin/EnquiriesTable";
-import { enquiries } from "@/lib/mock-data";
+import { listEnquiriesForAdmin } from "@/lib/services/enquiries";
 
 export const metadata: Metadata = {
   title: "Manage Enquiries",
 };
 
-export default function AdminEnquiriesPage() {
+export default async function AdminEnquiriesPage() {
+  const enquiries = await listEnquiriesForAdmin();
+
   return (
     <div className="flex flex-col gap-6">
       <div>

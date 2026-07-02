@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# I'm Realtor
 
-## Getting Started
+A simple, verified, admin-reviewed real estate marketplace — currently in
+**soft-live private beta**.
 
-First, run the development server:
+Built with Next.js App Router, TypeScript, and Tailwind CSS. The Supabase
+backend is optional during development: every page falls back to mock data
+in `src/lib/mock-data.ts` when Supabase env vars aren't set.
+
+## Project Status
+
+- **Phase 1 — Frontend MVP:** ✅ complete. Public marketing pages, property
+  browsing, request-access flow, and role dashboards (admin/agent/owner/buyer),
+  all running on mock data.
+- **Phase 2 — Supabase Backend Foundation:** ✅ complete. Database schema,
+  Row Level Security policies, storage bucket plan, and a service layer
+  that's ready to swap in for the mock data — see `docs/BACKEND_PHASES.md`
+  for what's next (Phase 3: Auth, Phase 4: real property workflow, Phase 5:
+  launch hardening).
+
+## Commands
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev     # start the dev server (http://localhost:3000)
+npm run lint    # eslint
+npm run build   # production build + type check
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Private Beta Rules
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- No open public signup — new users go through `/request-access` and are
+  reviewed by admin.
+- Agents and owners are admin-created or admin-approved.
+- Listings require admin approval (`properties.status = 'approved'`)
+  before they're publicly visible.
+- No ads, analytics, tracking pixels, or SEO push during the beta.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Supabase Backend
 
-## Learn More
+See [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md) for how to connect a
+real Supabase project (schema, RLS, storage, seed data, and a private-beta
+safety checklist). Until then, the app runs entirely on mock data.
 
-To learn more about Next.js, take a look at the following resources:
+## SEO / Crawling
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This app is intentionally **not** indexed while in private beta:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Root layout metadata sets `robots: { index: false, follow: false }`.
+- `src/app/robots.ts` serves a `robots.txt` that disallows all crawling.
+- No sitemap, analytics, or tracking scripts are included.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Do not remove these until the private beta ends and public launch is
+intentional (see `docs/BACKEND_PHASES.md`, Phase 5).

@@ -41,6 +41,39 @@ export default function LoginPage() {
         </p>
       </Card>
 
+      {process.env.NODE_ENV === "development" && (
+        <Card className="mt-5 p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Try Demo Login</h2>
+            <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
+              Local preview
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-slate-600">
+            No password needed. Explore read-only sample dashboards on your phone or laptop.
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {([
+              ["admin", "Admin"],
+              ["agent", "Agent"],
+              ["owner", "Owner"],
+              ["buyer", "Buyer"],
+            ] as const).map(([role, label]) => (
+              <Link
+                key={role}
+                href={`/demo/${role}`}
+                className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-3 text-center text-sm font-medium text-brand-700 transition-colors hover:border-brand-500 hover:bg-brand-100"
+              >
+                Continue as {label}
+              </Link>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-slate-500">
+            Demo mode never signs you in or grants access to real accounts and data.
+          </p>
+        </Card>
+      )}
+
       <p className="mt-6 text-center text-sm text-slate-500">
         Don&apos;t have access yet?{" "}
         <Link href="/request-access" className="font-medium text-brand-600 hover:text-brand-700">
